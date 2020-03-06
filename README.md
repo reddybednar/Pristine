@@ -61,7 +61,9 @@ let defaultConfig = {
     // type of element to create for the error text
     errorTextTag: 'div',
     // class of the error text element
-    errorTextClass: 'text-help' 
+    errorTextClass: 'text-help',
+    // count of errors visible at the same time, null means no limit
+    visibleErrorsLength: null,
 };
 ```
 
@@ -222,7 +224,10 @@ Add an attribute like `data-pristine-<ValidatorName>-message`with the custom mes
 
 **pristine.destroy()**
 <br/>*Destroy the pristine object*
-    
+
+**data-pristine-exclude**
+<br/>*Adding this attribute to input or any ancestor will exclude field from validation*
+
 <br/><br/>
 > The goal of this library is not to provide every possible type of validation and thus becoming a bloat. 
 > The goal is to provide most common types of validations and a neat way to add custom validators.
