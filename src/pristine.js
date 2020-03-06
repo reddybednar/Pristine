@@ -1,5 +1,5 @@
 import { lang } from './lang';
-import { tmpl, findAncestor, groupedElemCount, mergeConfig, isFunction } from './utils';
+import { tmpl, findAncestor, groupedElemCount, mergeConfig, isFunction, findAncestorByAttr } from './utils';
 
 let defaultConfig = {
     classTo: 'form-group',
@@ -7,10 +7,12 @@ let defaultConfig = {
     successClass: 'has-success',
     errorTextParent: 'form-group',
     errorTextTag: 'div',
-    errorTextClass: 'text-help'
+    errorTextClass: 'text-help',
+    visibleErrorsLength: null,
 };
 
 const PRISTINE_ERROR = 'pristine-error';
+const PRISTINE_EXCLUDE_ATTRIBUTE = 'data-pristine-exclude';
 const SELECTOR = "input:not([type^=hidden]):not([type^=submit]), select, textarea";
 const ALLOWED_ATTRIBUTES = ["required", "min", "max", 'minlength', 'maxlength', 'pattern'];
 const EMAIL_REGEX = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
@@ -96,6 +98,13 @@ export default function Pristine(form, config, live){
         }
     }
 
+    function _isFieldExcluded(field) {
+        let input = field.input;
+        if (input.hasAttribute(PRISTINE_EXCLUDE_ATTRIBUTE) || findAncestorByAttr(input, PRISTINE_EXCLUDE_ATTRIBUTE)) {
+            return true;
+        }
+    }
+
     /***
      * Checks whether the form/input elements are valid
      * @param input => input element(s) or a jquery selector, null for full form validation
@@ -117,6 +126,11 @@ export default function Pristine(form, config, live){
 
         for(let i in fields){
             let field = fields[i];
+            if (_isFieldExcluded(field)) {
+                _removeError(field);
+                continue;
+            }
+
             if (_validateField(field)){
                 !silent && _showSuccess(field);
             } else {
@@ -235,8 +249,10 @@ export default function Pristine(form, config, live){
             errorClassElement.classList.remove(self.config.successClass);
             errorClassElement.classList.add(self.config.errorClass);
         }
+
+        let errors = self.config.visibleErrorsLength !== null ? field.errors.slice(0, self.config.visibleErrorsLength) : field.errors;
         if (errorTextElement){
-            errorTextElement.innerHTML = field.errors.join('<br/>');
+            errorTextElement.innerHTML = errors.join('<br/>');
             errorTextElement.style.display = errorTextElement.pristineDisplay || '';
         }
     }

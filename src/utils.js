@@ -3,6 +3,11 @@ export function findAncestor (el, cls) {
     return el;
 }
 
+export function findAncestorByAttr (el, attr) {
+    while ((el = el.parentElement) && !el.hasAttribute(attr));
+    return el;
+}
+
 export function tmpl(o) {
     return this.replace(/\${([^{}]*)}/g, (a, b) => arguments[b]);
 }
