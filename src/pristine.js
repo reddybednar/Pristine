@@ -8,7 +8,6 @@ let defaultConfig = {
     errorTextParent: 'form-group',
     errorTextTag: 'div',
     errorTextClass: 'text-help',
-    visibleErrorsLength: null,
 };
 
 const PRISTINE_ERROR = 'pristine-error';
@@ -127,7 +126,10 @@ export default function Pristine(form, config, live){
         for(let i in fields){
             let field = fields[i];
             if (_isFieldExcluded(field)) {
-                _removeError(field);
+                if (field.errors !== undefined && field.errors.length > 0) {
+                    field.errors = [];
+                    _removeError(field);
+                }
                 continue;
             }
 
@@ -168,29 +170,25 @@ export default function Pristine(form, config, live){
      * @private
      */
     function _validateField(field){
-        let errors = [];
-        let valid = true;
+        field.errors = [];
+
         for(let i in field.validators){
             let validator = field.validators[i];
             let params = field.params[validator.name] ? field.params[validator.name] : [];
             params[0] = field.input.value;
             if (!validator.fn.apply(field.input, params)){
-                valid = false;
-
                 if (isFunction(validator.msg)) {
-                    errors.push(validator.msg(field.input.value, params))
+                    field.errors.push(validator.msg(field.input.value, params))
                 } else {
                     let error = field.messages[validator.name] || validator.msg;
-                    errors.push(tmpl.apply(error, params));
+                    field.errors.push(tmpl.apply(error, params));
                 }
 
-                if (validator.halt === true){
-                    break;
-                }
+                return false;
             }
         }
-        field.errors = errors;
-        return valid;
+
+        return true;
     }
 
     /***
@@ -250,9 +248,8 @@ export default function Pristine(form, config, live){
             errorClassElement.classList.add(self.config.errorClass);
         }
 
-        let errors = self.config.visibleErrorsLength !== null ? field.errors.slice(0, self.config.visibleErrorsLength) : field.errors;
         if (errorTextElement){
-            errorTextElement.innerHTML = errors.join('<br/>');
+            errorTextElement.innerHTML = field.errors.join('<br/>');
             errorTextElement.style.display = errorTextElement.pristineDisplay || '';
         }
     }

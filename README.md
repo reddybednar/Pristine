@@ -62,8 +62,6 @@ let defaultConfig = {
     errorTextTag: 'div',
     // class of the error text element
     errorTextClass: 'text-help',
-    // count of errors visible at the same time, null means no limit
-    visibleErrorsLength: null,
 };
 ```
 
