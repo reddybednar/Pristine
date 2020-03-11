@@ -1,6 +1,25 @@
 <!DOCTYPE html>
 <head>
     <title>Pristine test</title>
+    <style>
+        .formRow {
+            margin: 10px 0;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .formRowLabel + .formRowControl {
+            margin-left: 15px;
+        }
+        .formRowErrors {
+            margin-left: 15px;
+        }
+        .formRow.has-success input:not([type^=hidden]):not([type^=submit]):not([type^="checkbox"]) {
+            border-color: greenyellow;
+        }
+        .pristine-error {
+            color: red;
+        }
+    </style>
 </head>
 <body>
     <form id="form" action="index.html" method="GET">
@@ -9,7 +28,7 @@
                 <label for="fullname">Fullname:</label>
             </div>
             <div class="formRowControl">
-                <input id="fullname" name="fullname" type="text" required>
+                <input id="fullname" name="fullname" type="text" pattern="/^(\+|00)\d{5,12}$|^\d{9}$/">
             </div>
             <div class="formRowErrors"></div>
         </div>
@@ -21,6 +40,12 @@
                 <input id="email" minlength="10" type="email" data-pristine-ares name="email" required>
             </div>
             <div class="formRowErrors"></div>
+        </div>
+        <div class="formRowControl">
+            <label for="wrong">
+                <input id="wrong" type="checkbox" data-pristine-exclude="true">
+                Špatnej checkbox
+            </label>
         </div>
         <div class="formRow">
             <div class="formRowLabel">

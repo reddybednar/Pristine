@@ -159,7 +159,7 @@
             if (validator) {
                 fns.push(validator);
                 if (value) {
-                    var valueParams = value.split(',');
+                    var valueParams = name === 'pattern' ? [value] : value.split(',');
                     valueParams.unshift(null); // placeholder for input's value
                     params[name] = valueParams;
                 }
@@ -358,6 +358,10 @@
 
         function _showSuccess(field) {
             var errorClassElement = _removeError(field)[0];
+            if (!field.input.required && field.input.value === '') {
+                return;
+            }
+
             errorClassElement && errorClassElement.classList.add(self.config.successClass);
         }
 

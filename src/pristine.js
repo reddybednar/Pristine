@@ -90,7 +90,7 @@ export default function Pristine(form, config, live){
         if (validator) {
             fns.push(validator);
             if (value) {
-                let valueParams = value.split(',');
+                let valueParams = name === 'pattern' ? [value] : value.split(',');
                 valueParams.unshift(null); // placeholder for input's value
                 params[name] = valueParams;
             }
@@ -282,6 +282,10 @@ export default function Pristine(form, config, live){
 
     function _showSuccess(field){
         let errorClassElement = _removeError(field)[0];
+        if (!field.input.required && field.input.value === '') {
+            return;
+        }
+
         errorClassElement && errorClassElement.classList.add(self.config.successClass);
     }
 
