@@ -52,13 +52,44 @@
         return !!(obj && obj.constructor && obj.call && obj.apply);
     }
 
+    var asyncToGenerator = function (fn) {
+      return function () {
+        var gen = fn.apply(this, arguments);
+        return new Promise(function (resolve, reject) {
+          function step(key, arg) {
+            try {
+              var info = gen[key](arg);
+              var value = info.value;
+            } catch (error) {
+              reject(error);
+              return;
+            }
+
+            if (info.done) {
+              resolve(value);
+            } else {
+              return Promise.resolve(value).then(function (value) {
+                step("next", value);
+              }, function (err) {
+                step("throw", err);
+              });
+            }
+          }
+
+          return step("next");
+        });
+      };
+    };
+
     var defaultConfig = {
         classTo: 'form-group',
         errorClass: 'has-danger',
         successClass: 'has-success',
+        loadingClass: 'has-loading',
         errorTextParent: 'form-group',
         errorTextTag: 'div',
-        errorTextClass: 'text-help'
+        errorTextClass: 'text-help',
+        loadingText: 'Validating&hellip;'
     };
 
     var PRISTINE_ERROR = 'pristine-error';
@@ -73,6 +104,7 @@
         validator.name = name;
         if (!validator.msg) validator.msg = lang[name];
         if (validator.priority === undefined) validator.priority = 1;
+        validator.cache = {};
         validators[name] = validator;
     };
 
@@ -108,6 +140,121 @@
         } });
 
     function Pristine(form, config, live) {
+
+        /***
+         * Validates a single field, all validator functions are called and error messages are generated
+         * when a validator fails
+         * @param field
+         * @returns {boolean}
+         * @private
+         */
+        var _validateField = function () {
+            var _ref2 = asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(field) {
+                var i, validator, params, result, value, error;
+                return regeneratorRuntime.wrap(function _callee2$(_context2) {
+                    while (1) {
+                        switch (_context2.prev = _context2.next) {
+                            case 0:
+                                field.errors = [];
+
+                                _context2.t0 = regeneratorRuntime.keys(field.validators);
+
+                            case 2:
+                                if ((_context2.t1 = _context2.t0()).done) {
+                                    _context2.next = 28;
+                                    break;
+                                }
+
+                                i = _context2.t1.value;
+                                validator = field.validators[i];
+                                params = field.params[validator.name] ? field.params[validator.name] : [];
+
+                                params[0] = field.input.value;
+
+                                result = true;
+
+                                if (!_isAsync(validator.fn)) {
+                                    _context2.next = 21;
+                                    break;
+                                }
+
+                                value = field.input.value;
+
+                                if (!(validator.cache[value] === undefined)) {
+                                    _context2.next = 18;
+                                    break;
+                                }
+
+                                _showLoading(field);
+                                _context2.next = 14;
+                                return validator.fn.apply(field.input, params);
+
+                            case 14:
+                                result = _context2.sent;
+
+                                validator.cache[value] = result;
+                                _context2.next = 19;
+                                break;
+
+                            case 18:
+                                result = validator.cache[value];
+
+                            case 19:
+                                _context2.next = 22;
+                                break;
+
+                            case 21:
+                                result = validator.fn.apply(field.input, params);
+
+                            case 22:
+
+                                field.errors = [];
+
+                                if (result) {
+                                    _context2.next = 26;
+                                    break;
+                                }
+
+                                if (isFunction(validator.msg)) {
+                                    field.errors.push(validator.msg(field.input.value, params));
+                                } else {
+                                    error = field.messages[validator.name] || validator.msg;
+
+                                    field.errors.push(tmpl.apply(error, params));
+                                }
+
+                                return _context2.abrupt('return', false);
+
+                            case 26:
+                                _context2.next = 2;
+                                break;
+
+                            case 28:
+                                return _context2.abrupt('return', true);
+
+                            case 29:
+                            case 'end':
+                                return _context2.stop();
+                        }
+                    }
+                }, _callee2, this);
+            }));
+
+            return function _validateField(_x3) {
+                return _ref2.apply(this, arguments);
+            };
+        }();
+
+        /***
+         *
+         * @param elem => The dom element where the validator is applied to
+         * @param fn => validator function
+         * @param msg => message to show when validation fails. Supports templating. ${0} for the input's value, ${1} and
+         * so on are for the attribute values
+         * @param priority => priority of the validator function, higher valued function gets called first.
+         * @param halt => whether validation should stop for this field after current validation function
+         */
+
 
         var self = this;
 
@@ -173,46 +320,90 @@
             }
         }
 
+        function _isAsync(fn) {
+            return fn.constructor.name === 'AsyncFunction';
+        }
+
         /***
          * Checks whether the form/input elements are valid
          * @param input => input element(s) or a jquery selector, null for full form validation
          * @param silent => do not show error messages, just return true/false
          * @returns {boolean} return true when valid false otherwise
          */
-        self.validate = function (input, silent) {
-            silent = input && silent === true || input === true;
-            var fields = self.fields;
-            if (input !== true && input !== false) {
-                if (input instanceof HTMLElement) {
-                    fields = [input.pristine];
-                } else if (input instanceof NodeList || input instanceof (window.$ || Array) || input instanceof Array) {
-                    fields = Array.from(input).map(function (el) {
-                        return el.pristine;
-                    });
-                }
-            }
+        self.validate = function () {
+            var _ref = asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(input, silent) {
+                var fields, valid, i, field, isFieldValid;
+                return regeneratorRuntime.wrap(function _callee$(_context) {
+                    while (1) {
+                        switch (_context.prev = _context.next) {
+                            case 0:
+                                silent = input && silent === true || input === true;
+                                fields = self.fields;
 
-            var valid = true;
+                                if (input !== true && input !== false) {
+                                    if (input instanceof HTMLElement) {
+                                        fields = [input.pristine];
+                                    } else if (input instanceof NodeList || input instanceof (window.$ || Array) || input instanceof Array) {
+                                        fields = Array.from(input).map(function (el) {
+                                            return el.pristine;
+                                        });
+                                    }
+                                }
 
-            for (var i in fields) {
-                var field = fields[i];
-                if (_isFieldExcluded(field)) {
-                    if (field.errors !== undefined && field.errors.length > 0) {
-                        field.errors = [];
-                        _removeError(field);
+                                valid = true;
+                                _context.t0 = regeneratorRuntime.keys(fields);
+
+                            case 5:
+                                if ((_context.t1 = _context.t0()).done) {
+                                    _context.next = 17;
+                                    break;
+                                }
+
+                                i = _context.t1.value;
+                                field = fields[i];
+
+                                if (!_isFieldExcluded(field)) {
+                                    _context.next = 11;
+                                    break;
+                                }
+
+                                if (field.errors !== undefined && field.errors.length > 0) {
+                                    field.errors = [];
+                                    _removeError(field);
+                                }
+                                return _context.abrupt('continue', 5);
+
+                            case 11:
+                                _context.next = 13;
+                                return _validateField(field);
+
+                            case 13:
+                                isFieldValid = _context.sent;
+
+                                if (isFieldValid) {
+                                    !silent && _showSuccess(field);
+                                } else {
+                                    valid = false;
+                                    !silent && _showError(field);
+                                }
+                                _context.next = 5;
+                                break;
+
+                            case 17:
+                                return _context.abrupt('return', valid);
+
+                            case 18:
+                            case 'end':
+                                return _context.stop();
+                        }
                     }
-                    continue;
-                }
+                }, _callee, this);
+            }));
 
-                if (_validateField(field)) {
-                    !silent && _showSuccess(field);
-                } else {
-                    valid = false;
-                    !silent && _showError(field);
-                }
-            }
-            return valid;
-        };
+            return function (_x, _x2) {
+                return _ref.apply(this, arguments);
+            };
+        }();
 
         /***
          * Get errors of a specific field or the whole form
@@ -231,47 +422,7 @@
                 return erroneousFields;
             }
             return input.length ? input[0].pristine.errors : input.pristine.errors;
-        };
-
-        /***
-         * Validates a single field, all validator functions are called and error messages are generated
-         * when a validator fails
-         * @param field
-         * @returns {boolean}
-         * @private
-         */
-        function _validateField(field) {
-            field.errors = [];
-
-            for (var i in field.validators) {
-                var validator = field.validators[i];
-                var params = field.params[validator.name] ? field.params[validator.name] : [];
-                params[0] = field.input.value;
-                if (!validator.fn.apply(field.input, params)) {
-                    if (isFunction(validator.msg)) {
-                        field.errors.push(validator.msg(field.input.value, params));
-                    } else {
-                        var error = field.messages[validator.name] || validator.msg;
-                        field.errors.push(tmpl.apply(error, params));
-                    }
-
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        /***
-         *
-         * @param elem => The dom element where the validator is applied to
-         * @param fn => validator function
-         * @param msg => message to show when validation fails. Supports templating. ${0} for the input's value, ${1} and
-         * so on are for the attribute values
-         * @param priority => priority of the validator function, higher valued function gets called first.
-         * @param halt => whether validation should stop for this field after current validation function
-         */
-        self.addValidator = function (elem, fn, msg, priority, halt) {
+        };self.addValidator = function (elem, fn, msg, priority, halt) {
             if (elem instanceof HTMLElement) {
                 elem.pristine.validators.push({ fn: fn, msg: msg, priority: priority, halt: halt });
                 elem.pristine.validators.sort(function (a, b) {
@@ -320,11 +471,29 @@
 
             if (errorClassElement) {
                 errorClassElement.classList.remove(self.config.successClass);
+                errorClassElement.classList.remove(self.config.loadingClass);
                 errorClassElement.classList.add(self.config.errorClass);
             }
 
             if (errorTextElement) {
                 errorTextElement.innerHTML = field.errors.join('<br/>');
+                errorTextElement.style.display = errorTextElement.pristineDisplay || '';
+            }
+        }
+
+        function _showLoading(field) {
+            var errorElements = _getErrorElements(field);
+            var errorClassElement = errorElements[0],
+                errorTextElement = errorElements[1];
+
+            if (errorClassElement) {
+                errorClassElement.classList.remove(self.config.successClass);
+                errorClassElement.classList.remove(self.config.errorClass);
+                errorClassElement.classList.add(self.config.loadingClass);
+            }
+
+            if (errorTextElement) {
+                errorTextElement.innerHTML = self.config.loadingText;
                 errorTextElement.style.display = errorTextElement.pristineDisplay || '';
             }
         }
@@ -348,6 +517,7 @@
                 // IE > 9 doesn't support multiple class removal
                 errorClassElement.classList.remove(self.config.errorClass);
                 errorClassElement.classList.remove(self.config.successClass);
+                errorClassElement.classList.remove(self.config.loadingClass);
             }
             if (errorTextElement) {
                 errorTextElement.innerHTML = '';
@@ -378,6 +548,7 @@
             Array.from(self.form.querySelectorAll('.' + self.config.classTo)).map(function (elem) {
                 elem.classList.remove(self.config.successClass);
                 elem.classList.remove(self.config.errorClass);
+                elem.classList.remove(self.config.loadingClass);
             });
         };
 

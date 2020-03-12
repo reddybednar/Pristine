@@ -5,9 +5,11 @@ let defaultConfig = {
     classTo: 'form-group',
     errorClass: 'has-danger',
     successClass: 'has-success',
+    loadingClass: 'has-loading',
     errorTextParent: 'form-group',
     errorTextTag: 'div',
     errorTextClass: 'text-help',
+    loadingText: 'Validating&hellip;',
 };
 
 const PRISTINE_ERROR = 'pristine-error';
@@ -24,6 +26,7 @@ const _ = function (name, validator) {
         validator.msg = lang[name];
     if (validator.priority === undefined)
         validator.priority = 1;
+    validator.cache = {};
     validators[name] = validator;
 };
 
@@ -104,13 +107,17 @@ export default function Pristine(form, config, live){
         }
     }
 
+    function _isAsync(fn) {
+        return fn.constructor.name === 'AsyncFunction';
+    }
+
     /***
      * Checks whether the form/input elements are valid
      * @param input => input element(s) or a jquery selector, null for full form validation
      * @param silent => do not show error messages, just return true/false
      * @returns {boolean} return true when valid false otherwise
      */
-    self.validate = function(input, silent){
+    self.validate = async function(input, silent){
         silent = (input && silent === true) || input === true;
         let fields = self.fields;
         if (input !== true && input !== false){
@@ -133,7 +140,8 @@ export default function Pristine(form, config, live){
                 continue;
             }
 
-            if (_validateField(field)){
+            let isFieldValid = await _validateField(field);
+            if (isFieldValid){
                 !silent && _showSuccess(field);
             } else {
                 valid = false;
@@ -169,14 +177,30 @@ export default function Pristine(form, config, live){
      * @returns {boolean}
      * @private
      */
-    function _validateField(field){
+    async function _validateField(field){
         field.errors = [];
 
         for(let i in field.validators){
             let validator = field.validators[i];
             let params = field.params[validator.name] ? field.params[validator.name] : [];
             params[0] = field.input.value;
-            if (!validator.fn.apply(field.input, params)){
+
+            let result = true;
+            if (_isAsync(validator.fn)) {
+                let value = field.input.value;
+                if (validator.cache[value] === undefined) {
+                    _showLoading(field);
+                    result = await validator.fn.apply(field.input, params)
+                    validator.cache[value] = result;
+                } else {
+                    result = validator.cache[value];
+                }
+            } else {
+                result = validator.fn.apply(field.input, params);
+            }
+
+            field.errors = [];
+            if (!result) {
                 if (isFunction(validator.msg)) {
                     field.errors.push(validator.msg(field.input.value, params))
                 } else {
@@ -245,11 +269,28 @@ export default function Pristine(form, config, live){
 
         if(errorClassElement){
             errorClassElement.classList.remove(self.config.successClass);
+            errorClassElement.classList.remove(self.config.loadingClass);
             errorClassElement.classList.add(self.config.errorClass);
         }
 
         if (errorTextElement){
             errorTextElement.innerHTML = field.errors.join('<br/>');
+            errorTextElement.style.display = errorTextElement.pristineDisplay || '';
+        }
+    }
+
+    function _showLoading(field){
+        let errorElements = _getErrorElements(field);
+        let errorClassElement = errorElements[0], errorTextElement = errorElements[1];
+
+        if(errorClassElement){
+            errorClassElement.classList.remove(self.config.successClass);
+            errorClassElement.classList.remove(self.config.errorClass);
+            errorClassElement.classList.add(self.config.loadingClass);
+        }
+
+        if (errorTextElement){
+            errorTextElement.innerHTML = self.config.loadingText;
             errorTextElement.style.display = errorTextElement.pristineDisplay || '';
         }
     }
@@ -272,6 +313,7 @@ export default function Pristine(form, config, live){
             // IE > 9 doesn't support multiple class removal
             errorClassElement.classList.remove(self.config.errorClass);
             errorClassElement.classList.remove(self.config.successClass);
+            errorClassElement.classList.remove(self.config.loadingClass);
         }
         if (errorTextElement){
             errorTextElement.innerHTML = '';
@@ -302,6 +344,7 @@ export default function Pristine(form, config, live){
         Array.from(self.form.querySelectorAll('.' + self.config.classTo)).map(function (elem) {
             elem.classList.remove(self.config.successClass);
             elem.classList.remove(self.config.errorClass);
+            elem.classList.remove(self.config.loadingClass);
         });
 
     };

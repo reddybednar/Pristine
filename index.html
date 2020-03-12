@@ -16,8 +16,17 @@
         .formRow.has-success input:not([type^=hidden]):not([type^=submit]):not([type^="checkbox"]) {
             border-color: greenyellow;
         }
+        .formRow.has-loading input:not([type^=hidden]):not([type^=submit]):not([type^="checkbox"]) {
+            border-color: blue;
+        }
         .pristine-error {
             color: red;
+        }
+        .formRow.has-loading .pristine-error {
+            color: blue;
+        }
+        input:focus {
+            outline: none;
         }
     </style>
 </head>
@@ -77,25 +86,28 @@
         <button type="submit">Submit</button>
     </form>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/7.8.7/polyfill.min.js"></script>
     <script src="dist/pristine.js"></script>
     <script>
         window.onload = () => {
             var form = document.getElementById("form");
 
-            Pristine.addValidator('ares', () => {
-                console.log('Hello from custom validator');
-            }, 'Custom validator je špatně');
+            Pristine.addValidator('ares', async () => {
+                return await new Promise((resolve, reject) => {
+                    setTimeout(() => {
+                        resolve(false);
+                    }, 2000)
+                });
+            }, 'Ares non-valid', 1);
 
             var pristine = new Pristine(form, {
                 classTo: 'formRow',
                 errorTextParent: 'formRowErrors',
             });
 
-            form.addEventListener('submit', function (e) {
+            form.addEventListener('submit', async function (e) {
                 e.preventDefault();
-                if (pristine.validate()) {
-                    e.target.submit();
-                }
+                (await pristine.validate()) && e.target.submit();
             });
         };
 
