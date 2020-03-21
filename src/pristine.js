@@ -1,3 +1,4 @@
+import 'regenerator-runtime';
 import { lang } from './lang';
 import { tmpl, findAncestor, groupedElemCount, mergeConfig, isFunction, findAncestorByAttr } from './utils';
 
@@ -128,9 +129,8 @@ export default function Pristine(form, config, live){
             }
         }
 
-        let valid = true;
-
-        for(let i in fields){
+        let promises = [];
+        for (let i in fields){
             let field = fields[i];
             if (_isFieldExcluded(field)) {
                 if (field.errors !== undefined && field.errors.length > 0) {
@@ -140,15 +140,16 @@ export default function Pristine(form, config, live){
                 continue;
             }
 
-            let isFieldValid = await _validateField(field);
-            if (isFieldValid){
-                !silent && _showSuccess(field);
-            } else {
-                valid = false;
-                !silent && _showError(field);
-            }
+            promises.push(_performFieldValidation(field));   
         }
-        return valid;
+
+        let validationResults = await Promise.all(promises);
+        for (let i in validationResults) {
+            let fieldResult = validationResults[i];
+            if (!fieldResult) return false;
+        }
+
+        return true;
     };
 
     /***
@@ -213,6 +214,17 @@ export default function Pristine(form, config, live){
         }
 
         return true;
+    }
+
+    async function _performFieldValidation(field) {
+        let isFieldValid = await _validateField(field);
+        if (isFieldValid){
+            _showSuccess(field);
+        } else {
+            _showError(field);
+        }
+
+        return isFieldValid;
     }
 
     /***

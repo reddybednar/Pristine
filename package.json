@@ -25,11 +25,14 @@
   },
   "homepage": "https://github.com/sha256/Pristine#readme",
   "devDependencies": {
+    "@rollup/plugin-node-resolve": "^7.1.1",
     "babel-core": "^6.26.0",
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-env": "^1.6.1",
     "rollup-plugin-babel": "^3.0.2",
     "rollup-plugin-uglify": "^2.0.1"
   },
-  "dependencies": {}
+  "dependencies": {
+    "regenerator-runtime": "^0.13.5"
+  }
 }

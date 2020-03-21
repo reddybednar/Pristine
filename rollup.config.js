@@ -1,5 +1,6 @@
 import babel from 'rollup-plugin-babel';
 import uglify from 'rollup-plugin-uglify';
+import resolve from '@rollup/plugin-node-resolve';
 
 const source = {
     input: 'src/pristine',
@@ -9,6 +10,7 @@ const source = {
         name: 'Pristine'
     },
     plugins: [
+        resolve(),
         babel({
             exclude: 'node_modules/**',
         })
@@ -23,6 +25,7 @@ const minified = {
         name: 'Pristine'
     },
     plugins: [
+        resolve(),
         babel({
             exclude: 'node_modules/**',
         }),
