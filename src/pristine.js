@@ -27,7 +27,6 @@ const _ = function (name, validator) {
         validator.msg = lang[name];
     if (validator.priority === undefined)
         validator.priority = 1;
-    validator.cache = {};
     validators[name] = validator;
 };
 
@@ -108,10 +107,6 @@ export default function Pristine(form, config, live){
         }
     }
 
-    function _isAsync(fn) {
-        return fn.constructor.name === 'AsyncFunction';
-    }
-
     /***
      * Checks whether the form/input elements are valid
      * @param input => input element(s) or a jquery selector, null for full form validation
@@ -186,19 +181,8 @@ export default function Pristine(form, config, live){
             let params = field.params[validator.name] ? field.params[validator.name] : [];
             params[0] = field.input.value;
 
-            let result = true;
-            if (_isAsync(validator.fn)) {
-                let value = field.input.value;
-                if (validator.cache[value] === undefined) {
-                    _showLoading(field);
-                    result = await validator.fn.apply(field.input, params)
-                    validator.cache[value] = result;
-                } else {
-                    result = validator.cache[value];
-                }
-            } else {
-                result = validator.fn.apply(field.input, params);
-            }
+            _showLoading(field);
+            let result = await validator.fn.apply(field.input, params)
 
             field.errors = [];
             if (!result) {

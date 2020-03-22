@@ -833,7 +833,6 @@
       validator.name = name;
       if (!validator.msg) validator.msg = lang[name];
       if (validator.priority === undefined) validator.priority = 1;
-      validator.cache = {};
       validators[name] = validator;
   };
 
@@ -879,7 +878,7 @@
        */
       var _validateField = function () {
           var _ref2 = asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(field) {
-              var i, validator, params, result, value, error;
+              var i, validator, params, result, error;
               return regeneratorRuntime.wrap(function _callee2$(_context2) {
                   while (1) {
                       switch (_context2.prev = _context2.next) {
@@ -890,7 +889,7 @@
 
                           case 2:
                               if ((_context2.t1 = _context2.t0()).done) {
-                                  _context2.next = 28;
+                                  _context2.next = 17;
                                   break;
                               }
 
@@ -900,47 +899,18 @@
 
                               params[0] = field.input.value;
 
-                              result = true;
-
-                              if (!_isAsync(validator.fn)) {
-                                  _context2.next = 21;
-                                  break;
-                              }
-
-                              value = field.input.value;
-
-                              if (!(validator.cache[value] === undefined)) {
-                                  _context2.next = 18;
-                                  break;
-                              }
-
                               _showLoading(field);
-                              _context2.next = 14;
+                              _context2.next = 10;
                               return validator.fn.apply(field.input, params);
 
-                          case 14:
+                          case 10:
                               result = _context2.sent;
 
-                              validator.cache[value] = result;
-                              _context2.next = 19;
-                              break;
-
-                          case 18:
-                              result = validator.cache[value];
-
-                          case 19:
-                              _context2.next = 22;
-                              break;
-
-                          case 21:
-                              result = validator.fn.apply(field.input, params);
-
-                          case 22:
 
                               field.errors = [];
 
                               if (result) {
-                                  _context2.next = 26;
+                                  _context2.next = 15;
                                   break;
                               }
 
@@ -954,14 +924,14 @@
 
                               return _context2.abrupt('return', false);
 
-                          case 26:
+                          case 15:
                               _context2.next = 2;
                               break;
 
-                          case 28:
+                          case 17:
                               return _context2.abrupt('return', true);
 
-                          case 29:
+                          case 18:
                           case 'end':
                               return _context2.stop();
                       }
@@ -1081,10 +1051,6 @@
           if (input.hasAttribute(PRISTINE_EXCLUDE_ATTRIBUTE) || findAncestorByAttr(input, PRISTINE_EXCLUDE_ATTRIBUTE)) {
               return true;
           }
-      }
-
-      function _isAsync(fn) {
-          return fn.constructor.name === 'AsyncFunction';
       }
 
       /***
