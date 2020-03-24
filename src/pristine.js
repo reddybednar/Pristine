@@ -271,6 +271,8 @@ export default function Pristine(form, config, live){
 
         if (errorTextElement){
             errorTextElement.innerHTML = field.errors.join('<br/>');
+            errorTextElement.classList.remove(self.config.loadingClass);
+            errorTextElement.classList.remove(self.config.successClass);
             errorTextElement.style.display = errorTextElement.pristineDisplay || '';
         }
     }
@@ -287,6 +289,8 @@ export default function Pristine(form, config, live){
 
         if (errorTextElement){
             errorTextElement.innerHTML = self.config.loadingText;
+            errorTextElement.classList.remove(self.config.successClass);
+            errorTextElement.classList.add(self.config.loadingClass);
             errorTextElement.style.display = errorTextElement.pristineDisplay || '';
         }
     }
@@ -313,6 +317,8 @@ export default function Pristine(form, config, live){
         }
         if (errorTextElement){
             errorTextElement.innerHTML = '';
+            errorTextElement.classList.remove(self.config.loadingClass);
+            errorTextElement.classList.remove(self.config.successClass);
             errorTextElement.style.display = 'none';
         }
         return errorElements;
@@ -331,8 +337,10 @@ export default function Pristine(form, config, live){
         }
 
         if (errorTextElement){
-            if (field.input.getAttribute('data-pristine-success') !== null) {
-                errorTextElement.innerHTML = field.input.getAttribute('data-pristine-success');
+            if (field.input.getAttribute('data-pristine-success-message') !== null) {
+                errorTextElement.innerHTML = field.input.getAttribute('data-pristine-success-message');
+                errorTextElement.classList.remove(self.config.loadingClass);
+                errorTextElement.classList.add(self.config.successClass);
                 errorTextElement.style.display = errorTextElement.pristineDisplay || '';
             }
         }
