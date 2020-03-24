@@ -1274,12 +1274,24 @@
       }
 
       function _showSuccess(field) {
-          var errorClassElement = _removeError(field)[0];
+          var errorElements = _removeError(field);
+
           if (!field.input.required && field.input.value === '') {
               return;
           }
 
-          errorClassElement && errorClassElement.classList.add(self.config.successClass);
+          var errorClassElement = errorElements[0],
+              errorTextElement = errorElements[1];
+          if (errorClassElement) {
+              errorClassElement.classList.add(self.config.successClass);
+          }
+
+          if (errorTextElement) {
+              if (field.input.getAttribute('data-pristine-success') !== null) {
+                  errorTextElement.innerHTML = field.input.getAttribute('data-pristine-success');
+                  errorTextElement.style.display = errorTextElement.pristineDisplay || '';
+              }
+          }
       }
 
       /***

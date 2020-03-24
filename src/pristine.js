@@ -319,12 +319,23 @@ export default function Pristine(form, config, live){
     }
 
     function _showSuccess(field){
-        let errorClassElement = _removeError(field)[0];
+        let errorElements = _removeError(field);
+
         if (!field.input.required && field.input.value === '') {
             return;
         }
 
-        errorClassElement && errorClassElement.classList.add(self.config.successClass);
+        let errorClassElement = errorElements[0], errorTextElement = errorElements[1];
+        if (errorClassElement){
+            errorClassElement.classList.add(self.config.successClass)
+        }
+
+        if (errorTextElement){
+            if (field.input.getAttribute('data-pristine-success') !== null) {
+                errorTextElement.innerHTML = field.input.getAttribute('data-pristine-success');
+                errorTextElement.style.display = errorTextElement.pristineDisplay || '';
+            }
+        }
     }
 
     /***
